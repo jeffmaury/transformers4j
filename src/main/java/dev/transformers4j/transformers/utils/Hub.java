@@ -221,7 +221,7 @@ public class Hub {
             subfolder = "";
         }
 
-        var full_filename = subfolder + File.separatorChar + filename;
+        var full_filename = subfolder.isEmpty() ? filename : subfolder + File.separatorChar + filename;
         if (Files.isDirectory(path_or_repo_id)) {
             resolved_file = path_or_repo_id.resolve(subfolder).resolve(filename);
             if (!Files.isRegularFile(resolved_file)) {
