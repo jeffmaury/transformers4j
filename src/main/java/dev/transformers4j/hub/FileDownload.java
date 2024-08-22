@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -579,8 +580,8 @@ public class FileDownload {
         if (cache_dir == null) {
             cache_dir = Paths.get(HF_HUB_CACHE);
         }
-        var object_id = repo_id.replace("/", "--");
-        var repo_cache = cache_dir.resolve(repo_type + "--" + object_id);
+        var object_id = repo_id.replace(File.separator, "--");
+        var repo_cache = cache_dir.resolve(repo_type + "s--" + object_id);
         if (!Files.isDirectory(repo_cache)) {
             return null;
         }
@@ -905,19 +906,19 @@ public class FileDownload {
 
         // Some Windows versions do not allow for paths longer than 255 characters.
         // In this case, we must specify it is an extended path by using the "\\?\" prefix.
-        if (System.getenv("os.name").contains("win") && lock_path.toString().length() > 255) {
+        if (System.getProperty("os.name").contains("win") && lock_path.toString().length() > 255) {
             lock_path = Paths.get("\\\\?\\" + lock_path.toAbsolutePath().toString());
         }
 
-        if (System.getenv("os.name").contains("win") && blob_path.toString().length() > 255) {
+        if (System.getProperty("os.name").contains("win") && blob_path.toString().length() > 255) {
             blob_path = Paths.get("\\\\?\\" + blob_path.toAbsolutePath().toString());
         }
 
         Files.createDirectories(lock_path.getParent());
         try (var channel = FileChannel.open(lock_path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
                 var lock = channel.tryLock()) {
-            _download_to_tmp_and_move(blob_path.resolve(".incomplete"), blob_path, url_to_download, proxies, headers,
-                    expected_size, filename, force_download);
+            _download_to_tmp_and_move(blob_path.resolveSibling(blob_path.getFileName() + ".incomplete"), blob_path,
+                    url_to_download, proxies, headers, expected_size, filename, force_download);
             _create_symlink(blob_path, pointer_path, true);
         }
 
@@ -1216,6 +1217,8 @@ public class FileDownload {
                 _check_disk_space(expected_size, destination_path.getParent());
             }
             http_get(url_to_download, stream, proxies, resume_size, headers, expected_size, null, 5, null);
+            LOGGER.info("Download complete. Moving file to " + destination_path);
+            _chmod_and_move(incomplete_path, destination_path);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IOException(e);
@@ -1231,6 +1234,32 @@ public class FileDownload {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    /**
+     * Set correct permission before moving a blob from tmp directory to cache dir.
+     *
+     * Do not take into account the `umask` from the process as there is no convenient way to get it that is
+     * thread-safe.
+     *
+     * See: - About umask: https://docs.python.org/3/library/os.html#os.umask - Thread-safety:
+     * https://stackoverflow.com/a/70343066 - About solution:
+     * https://github.com/huggingface/huggingface_hub/pull/1220#issuecomment-1326211591 - Fix issue:
+     * https://github.com/huggingface/huggingface_hub/issues/1141 - Fix issue:
+     * https://github.com/huggingface/huggingface_hub/issues/1215
+     */
+    private static void _chmod_and_move(Path src, Path dst) throws IOException {
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            // Get umask by creating a temporary file in the cached repo folder.
+            Path tmp_file = dst.getParent().getParent().resolve("tmp_" + UUID.randomUUID());
+            try {
+                Files.createFile(tmp_file);
+                Files.setPosixFilePermissions(src, Files.getPosixFilePermissions(tmp_file));
+            } finally {
+                Files.deleteIfExists(tmp_file);
+            }
+        }
+        Files.move(src, dst);
     }
 
     /**
