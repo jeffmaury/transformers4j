@@ -65,4 +65,11 @@ public class AutoConfigTest {
                 () -> AutoConfig.from_pretrained(DUMMY_UNKNOWN_IDENTIFIER, new HashMap<>(Map.of("revision", "aaaaaa"))),
                 "aaaaaa is not a valid git identifier (branch name, tag name or commit id)");
     }
+
+    @Test
+    public void test_configuration_not_found() {
+        assertThrows(IOException.class,
+                () -> AutoConfig.from_pretrained(Path.of("hf-internal-testing/no-config-test-repo")),
+                "hf-internal-testing/no-config-test-repo does not appear to have a file named config.json.");
+    }
 }
