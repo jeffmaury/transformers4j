@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 
 import static dev.transformers4j.transformers.TestingUtils.DUMMY_UNKNOWN_IDENTIFIER;
 import static dev.transformers4j.transformers.TestingUtils.get_tests_dir;
@@ -34,4 +35,9 @@ public class AutoConfigTest {
         assertInstanceOf(RobertaConfig.class, config);
     }
 
+    @Test
+    public void test_config_for_model_str() throws IOException {
+        var config = AutoConfig.for_model("roberta", new HashMap<>());
+        assertInstanceOf(RobertaConfig.class, config);
+    }
 }
