@@ -5,6 +5,7 @@ import dev.transformers4j.transformers.models.roberta.RobertaConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +39,15 @@ public class AutoConfigTest {
     @Test
     public void test_config_for_model_str() throws IOException {
         var config = AutoConfig.for_model("roberta", new HashMap<>());
+        assertInstanceOf(RobertaConfig.class, config);
+    }
+
+    @Test
+    public void test_pattern_matching_fallback() throws IOException {
+        var folder = Files.createTempDirectory(null).resolve("fake-roberta");
+        Files.createDirectories(folder);
+        Files.writeString(folder.resolve("config.json"), "{}");
+        var config = AutoConfig.from_pretrained(folder);
         assertInstanceOf(RobertaConfig.class, config);
     }
 }

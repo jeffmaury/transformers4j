@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AutoConfig {
-    private static Logger LOGGER = LoggerFactory.getLogger(AutoConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AutoConfig.class);
 
     static final int TIME_OUT_REMOTE_CODE = 15_000;
 
@@ -91,7 +92,7 @@ public abstract class AutoConfig {
                     + " set the option `trust_remote_code=True` to remove this error.");
         }
 
-        return trust_remote_code;
+        return Boolean.TRUE.equals(trust_remote_code);
     }
 
     private static final Map<String, Class<? extends PretrainedConfig>> CONFIG_MAPPING_NAMES = Map.ofEntries(
@@ -250,15 +251,16 @@ public abstract class AutoConfig {
         }).findFirst().map(p -> p.get()).orElse(null);
     }
 
-    private static Collection<String> getSupportedModelTypes() {
-        return ServiceLoader.load(PretrainedConfigFactory.class).stream().map(p -> {
+    private static List<String> getSupportedModelTypes() {
+        var modelTypes = ServiceLoader.load(PretrainedConfigFactory.class).stream().map(p -> {
             var modelType = p.type().getAnnotation(ModelType.class);
             if (modelType != null) {
                 return modelType.value();
             }
             return new String[0];
         }).flatMap(Stream::of).collect(Collectors.toList());
-
+        modelTypes.sort(Comparator.comparingInt(String::length).reversed());
+        return modelTypes;
     }
 
     public static <T extends PretrainedConfig> T for_model(String model_type, Map<String, Object> kwargs)
@@ -324,11 +326,15 @@ public abstract class AutoConfig {
             } else {
                 // Fallback: use pattern matching on the string.
                 // We go from longer names to shorter names to catch roberta before bert (for instance)
-                // TODO: check if static configuration is needed
+                for (var modelType : getSupportedModelTypes()) {
+                    if (pretrained_model_name_or_path.toString().contains(modelType)) {
+                        return getPretrainedConfigFactory(modelType).from_dict(config_dict, new HashMap<>());
+                    }
+                }
                 throw new IOException("Unrecognized model in " + pretrained_model_name_or_path + ". "
                         + "Should have a `model_type` key in its " + Init.CONFIG_NAME
                         + ", or contain one of the following strings " + "in its name: "
-                        + String.join(", ", CONFIG_MAPPING.keySet()));
+                        + String.join(", ", getSupportedModelTypes()));
             }
             /*
              * throw new IllegalArgumentException("Unrecognized model in " + pretrained_model_name_or_path + ". " +
