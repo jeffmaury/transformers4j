@@ -146,7 +146,7 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
                         local_files_only, subfolder, null, Either.left(user_agent), false, false, false, commit_hash,
                         new HashMap<>());
             } catch (IOException e) {
-                throw new RuntimeException("Can't load the configuration of '" + pretrained_model_name_or_path
+                throw new IOException("Can't load the configuration of '" + pretrained_model_name_or_path
                         + "'. If you were trying to load it"
                         + " from 'https://huggingface.co/models', make sure you don't have a local directory with the same"
                         + " name. Otherwise, make sure '" + pretrained_model_name_or_path

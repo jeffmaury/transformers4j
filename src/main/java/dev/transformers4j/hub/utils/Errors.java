@@ -6,14 +6,8 @@ import java.util.regex.Pattern;
 
 public class Errors {
 
-    private final static Pattern REPO_API_REGEX = Pattern.compile("""
-            ^https://[^/]+
-            (
-            /api/(models|datasets|spaces)/(.+)
-            |
-            /(.+)/resolve/(.+)
-            )
-            """);
+    private final static Pattern REPO_API_REGEX = Pattern
+            .compile("^https://[^/]+(/api/(models|datasets|spaces)/(.+)|/(.+)/resolve/(.+))");
 
     /** Raises :class:`HTTPError`, if one occurred. */
     private static void raise_for_status(HttpResponse<?> response) throws IOException {
@@ -86,7 +80,7 @@ public class Errors {
                 throw new DisabledRepoException(message, response);
             } else if ("RepoNotFound".equals(error_code)
                     || (response.statusCode() == 401 && response.request() != null && response.request().uri() != null
-                            && REPO_API_REGEX.matcher(response.request().uri().toString()).find())) {
+                            && REPO_API_REGEX.matcher(response.request().uri().toString()).matches())) {
                 // 401 is misleading as it is returned for:
                 // - private and gated repos if user is not authenticated
                 // - missing repos

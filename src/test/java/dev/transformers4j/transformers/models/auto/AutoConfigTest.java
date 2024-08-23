@@ -14,6 +14,7 @@ import static dev.transformers4j.transformers.TestingUtils.DUMMY_UNKNOWN_IDENTIF
 import static dev.transformers4j.transformers.TestingUtils.get_tests_dir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AutoConfigTest {
     private static final Path SAMPLE_ROBERTA_CONFIG = get_tests_dir("fixtures/dummy-config.json");
@@ -49,5 +50,11 @@ public class AutoConfigTest {
         Files.writeString(folder.resolve("config.json"), "{}");
         var config = AutoConfig.from_pretrained(folder);
         assertInstanceOf(RobertaConfig.class, config);
+    }
+
+    @Test
+    public void test_repo_not_found() {
+        assertThrows(IOException.class, () -> AutoConfig.from_pretrained(Path.of("bert-base")),
+                "bert-base is not a local folder and is not a valid model identifier");
     }
 }
