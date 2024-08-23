@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import static dev.transformers4j.transformers.TestingUtils.DUMMY_UNKNOWN_IDENTIFIER;
 import static dev.transformers4j.transformers.TestingUtils.get_tests_dir;
@@ -56,5 +57,12 @@ public class AutoConfigTest {
     public void test_repo_not_found() {
         assertThrows(IOException.class, () -> AutoConfig.from_pretrained(Path.of("bert-base")),
                 "bert-base is not a local folder and is not a valid model identifier");
+    }
+
+    @Test
+    public void test_revision_not_found() {
+        assertThrows(IOException.class,
+                () -> AutoConfig.from_pretrained(DUMMY_UNKNOWN_IDENTIFIER, new HashMap<>(Map.of("revision", "aaaaaa"))),
+                "aaaaaa is not a valid git identifier (branch name, tag name or commit id)");
     }
 }
