@@ -143,7 +143,7 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
             try {
                 resolved_config_file = cached_file(pretrained_model_name_or_path, configuration_file, cache_dir,
                         force_download, resume_download, proxies, token != null ? Either.right(token) : null, revision,
-                        local_files_only, subfolder, null, Either.left(user_agent), false, false, false, commit_hash,
+                        local_files_only, subfolder, null, Either.left(user_agent), true, true, true, commit_hash,
                         new HashMap<>());
             } catch (IOException e) {
                 throw new IOException("Can't load the configuration of '" + pretrained_model_name_or_path
