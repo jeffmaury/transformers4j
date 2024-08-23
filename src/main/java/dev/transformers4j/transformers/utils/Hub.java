@@ -267,29 +267,30 @@ public class Hub {
             if (resolved_file != null || !_raise_exceptions_for_gated_repo) {
                 return resolved_file;
             }
-            throw new RuntimeException("You are trying to access a gated repo.\nMake sure to have access to it at "
+            throw new IOException("You are trying to access a gated repo.\nMake sure to have access to it at "
                     + "'https://huggingface.co/" + path_or_repo_id + "'.\n" + e);
         } catch (RepositoryNotFoundException e) {
-            throw new RuntimeException(path_or_repo_id + " is not a local folder and is not a valid model identifier "
+            throw new IOException(path_or_repo_id + " is not a local folder and is not a valid model identifier "
                     + "listed on 'https://huggingface.co/models'\nIf this is a private repository, make sure to pass a token "
                     + "having permission to this repo either by logging in with `huggingface-cli login` or by passing "
-                    + "`token=<your_token>`");
+                    + "`token=<your_token>`", e);
         } catch (RevisionNotFoundException e) {
-            throw new RuntimeException(
+            throw new IOException(
                     revision + " is not a valid git identifier (branch name, tag name or commit id) that exists "
                             + "for this model name. Check the model page at " + "'https://huggingface.co/"
-                            + path_or_repo_id + "' for available revisions.");
+                            + path_or_repo_id + "' for available revisions.",
+                    e);
         } catch (LocalEntryNotFoundException e) {
             resolved_file = _get_cache_file_to_return(path_or_repo_id.toString(), full_filename, cache_dir, revision);
             if (resolved_file != null || !_raise_exceptions_for_missing_entries
                     || !_raise_exceptions_for_connection_errors) {
                 return resolved_file;
             }
-            throw new RuntimeException("We couldn't connect to '" + HUGGINGFACE_CO_RESOLVE_ENDPOINT
+            throw new IOException("We couldn't connect to '" + HUGGINGFACE_CO_RESOLVE_ENDPOINT
                     + "' to load this file, couldn't find it in the" + " cached files and it looks like "
                     + path_or_repo_id + " is not the path to a directory containering a file named " + full_filename
                     + ".\nCheckout your internet connection or see how to run the library in offline mode at"
-                    + " 'https://huggingface.co/docs/huggingface_hub/overview#offline-mode'.");
+                    + " 'https://huggingface.co/docs/huggingface_hub/overview#offline-mode'.", e);
 
         } catch (EntryNotFoundException e) {
             if (!_raise_exceptions_for_missing_entries) {
@@ -298,16 +299,17 @@ public class Hub {
             if (revision == null) {
                 revision = "main";
             }
-            throw new RuntimeException(
+            throw new IOException(
                     path_or_repo_id + " does not appear to have a file named " + full_filename + ". Checkout "
-                            + "'https://huggingface.co/" + path_or_repo_id + "/" + revision + "' for available files.");
+                            + "'https://huggingface.co/" + path_or_repo_id + "/" + revision + "' for available files.",
+                    e);
         } catch (IOException e) {
             resolved_file = _get_cache_file_to_return(path_or_repo_id.toString(), full_filename, cache_dir, revision);
             if (resolved_file != null || !_raise_exceptions_for_connection_errors) {
                 return resolved_file;
             }
-            throw new RuntimeException(
-                    "There was a specific connection when trying to load  " + path_or_repo_id + ":\n" + e);
+            throw new IOException("There was a specific connection error when trying to load  " + path_or_repo_id
+                    + ":\n" + e.getLocalizedMessage(), e);
         }
         return resolved_file;
     }
