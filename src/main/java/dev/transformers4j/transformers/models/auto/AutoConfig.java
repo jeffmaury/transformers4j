@@ -6,21 +6,22 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import dev.transformers4j.transformers.DynamicModuleUtils;
 import dev.transformers4j.transformers.MapUtil;
 import dev.transformers4j.transformers.PretrainedConfig;
 import dev.transformers4j.transformers.PretrainedConfigFactory;
 import dev.transformers4j.transformers.utils.Init;
-import io.vavr.control.Either;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,7 +234,7 @@ public abstract class AutoConfig {
         }
     };
 
-    private static <T extends PretrainedConfigFactory<? extends PretrainedConfig>> T getConfigClassForModelType(
+    private static <T extends PretrainedConfigFactory<? extends PretrainedConfig>> T getPretrainedConfigFactory(
             String model_type) {
         var loader = ServiceLoader.load(PretrainedConfigFactory.class);
         return (T) loader.stream().filter(config -> {
@@ -247,6 +248,27 @@ public abstract class AutoConfig {
             }
             return false;
         }).findFirst().map(p -> p.get()).orElse(null);
+    }
+
+    private static Collection<String> getSupportedModelTypes() {
+        return ServiceLoader.load(PretrainedConfigFactory.class).stream().map(p -> {
+            var modelType = p.type().getAnnotation(ModelType.class);
+            if (modelType != null) {
+                return modelType.value();
+            }
+            return new String[0];
+        }).flatMap(Stream::of).collect(Collectors.toList());
+
+    }
+
+    public static <T extends PretrainedConfig> T for_model(String model_type, Map<String, Object> kwargs)
+            throws IOException {
+        var config_class = getPretrainedConfigFactory(model_type);
+        if (config_class != null) {
+            return config_class.from_dict(kwargs, new HashMap<>());
+        }
+        throw new IOException("Unrecognized model type: " + model_type + ". Should contain one of "
+                + String.join(",", getSupportedModelTypes()));
     }
 
     public static <T extends PretrainedConfig> T from_pretrained(Path pretrained_model_name_or_path,
@@ -291,7 +313,7 @@ public abstract class AutoConfig {
                         pretrained_model_name_or_path);
 
             } else if (config_dict.containsKey("model_type")) {
-                var config_class = getConfigClassForModelType((String) config_dict.get("model_type"));
+                var config_class = getPretrainedConfigFactory((String) config_dict.get("model_type"));
                 if (config_class == null) {
                     throw new IllegalArgumentException("The checkpoint you are trying to load has model type `"
                             + config_dict.get("model_type") + "` "
