@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 
+import static dev.transformers4j.transformers.TestingUtils.DUMMY_UNKNOWN_IDENTIFIER;
 import static dev.transformers4j.transformers.TestingUtils.get_tests_dir;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -24,6 +25,12 @@ public class AutoConfigTest {
     @Test
     public void test_config_model_type_from_local_file() throws IOException {
         var config = AutoConfig.from_pretrained(SAMPLE_ROBERTA_CONFIG);
+        assertInstanceOf(RobertaConfig.class, config);
+    }
+
+    @Test
+    public void test_config_model_type_from_model_identifier() throws IOException {
+        var config = AutoConfig.from_pretrained(DUMMY_UNKNOWN_IDENTIFIER);
         assertInstanceOf(RobertaConfig.class, config);
     }
 
