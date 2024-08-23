@@ -1,5 +1,6 @@
 package dev.transformers4j.transformers.models.bert;
 
+import dev.transformers4j.transformers.MapUtil;
 import dev.transformers4j.transformers.PretrainedConfig;
 import dev.transformers4j.transformers.models.auto.ModelType;
 
@@ -53,9 +54,40 @@ import java.util.Map;
  *
  * >>> # Accessing the model configuration >>> configuration = model.config ```
  */
-@ModelType("bert")
 public class BertConfig extends PretrainedConfig {
+    protected int vocab_size;
+    protected int hidden_size;
+    protected int num_hidden_layers;
+    protected int num_attention_heads;
+    protected String hidden_act;
+    protected int intermediate_size;
+    protected double hidden_dropout_prob;
+    protected double attention_probs_dropout_prob;
+    protected int max_position_embeddings;
+    protected int type_vocab_size;
+    protected double initializer_range;
+    protected double layer_norm_eps;
+    protected String position_embedding_type;
+    protected boolean use_cache;
+    protected Double classifier_dropout;
+
     protected BertConfig(Map<String, Object> kwargs) throws RuntimeException {
         super(kwargs);
+
+        this.vocab_size = MapUtil.get(kwargs, "vocab_size", Integer.class, 30522);
+        this.hidden_size = MapUtil.get(kwargs, "hidden_size", Integer.class, 768);
+        this.num_hidden_layers = MapUtil.get(kwargs, "num_hidden_layers", Integer.class, 12);
+        this.num_attention_heads = MapUtil.get(kwargs, "num_attention_heads", Integer.class, 12);
+        this.hidden_act = MapUtil.get(kwargs, "hidden_act", String.class, "gelu");
+        this.intermediate_size = MapUtil.get(kwargs, "intermediate_size", Integer.class, 3072);
+        this.hidden_dropout_prob = MapUtil.get(kwargs, "hidden_dropout_prob", Double.class, 0.1);
+        this.attention_probs_dropout_prob = MapUtil.get(kwargs, "attention_probs_dropout_prob", Double.class, 0.1);
+        this.max_position_embeddings = MapUtil.get(kwargs, "max_position_embeddings", Integer.class, 512);
+        this.type_vocab_size = MapUtil.get(kwargs, "type_vocab_size", Integer.class, 2);
+        this.initializer_range = MapUtil.get(kwargs, "initializer_range", Double.class, 0.02);
+        this.layer_norm_eps = MapUtil.get(kwargs, "layer_norm_eps", Double.class, 1e-12);
+        this.position_embedding_type = MapUtil.get(kwargs, "position_embedding_type", String.class, "absolute");
+        this.use_cache = MapUtil.get(kwargs, "use_cache", Boolean.class, true);
+        this.classifier_dropout = MapUtil.get(kwargs, "classifier_dropout", Double.class, null);
     }
 }

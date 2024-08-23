@@ -18,6 +18,7 @@ import java.util.TreeMap;
 import dev.transformers4j.transformers.DynamicModuleUtils;
 import dev.transformers4j.transformers.MapUtil;
 import dev.transformers4j.transformers.PretrainedConfig;
+import dev.transformers4j.transformers.PretrainedConfigFactory;
 import dev.transformers4j.transformers.utils.Init;
 import io.vavr.control.Either;
 import org.apache.commons.lang3.reflect.MethodUtils;
@@ -232,9 +233,10 @@ public abstract class AutoConfig {
         }
     };
 
-    private static Class<? extends PretrainedConfig> getConfigClassForModelType(String model_type) {
-        var loader = ServiceLoader.load(PretrainedConfig.class);
-        return loader.stream().filter(config -> {
+    private static <T extends PretrainedConfigFactory<? extends PretrainedConfig>> T getConfigClassForModelType(
+            String model_type) {
+        var loader = ServiceLoader.load(PretrainedConfigFactory.class);
+        return (T) loader.stream().filter(config -> {
             var modelType = config.type().getAnnotation(ModelType.class);
             if (modelType != null) {
                 for (String type : modelType.value()) {
@@ -244,7 +246,7 @@ public abstract class AutoConfig {
                 }
             }
             return false;
-        }).map(ServiceLoader.Provider::type).findFirst().orElse(null);
+        }).findFirst().map(p -> p.get()).orElse(null);
     }
 
     public static <T extends PretrainedConfig> T from_pretrained(Path pretrained_model_name_or_path,
@@ -265,8 +267,7 @@ public abstract class AutoConfig {
             Boolean trust_remote_code = MapUtil.pop(kwargs, "trust_remote_code", Boolean.class, null);
             var code_revision = MapUtil.pop(kwargs, "code_revision", String.class, null);
 
-            var result = PretrainedConfig.get_config_dict(PretrainedConfig.class, pretrained_model_name_or_path,
-                    kwargs);
+            var result = new PretrainedConfigFactory<>().get_config_dict(pretrained_model_name_or_path, kwargs);
             var config_dict = result._1();
             var unused_kwargs = result._2();
             var has_remote_code = config_dict.containsKey("auto_map")
@@ -297,8 +298,7 @@ public abstract class AutoConfig {
                             + "but Transformers does not recognize this architecture. This could be because of an "
                             + "issue with the checkpoint, or because your version of Transformers is out of date.");
                 }
-                return (T) MethodUtils.invokeStaticMethod(config_class, "from_dict", config_class, config_dict,
-                        new HashMap<>());
+                return config_class.from_dict(config_dict, new HashMap<>());
             } else {
                 // Fallback: use pattern matching on the string.
                 // We go from longer names to shorter names to catch roberta before bert (for instance)

@@ -8,11 +8,13 @@ public class MapUtil {
     public static <T> T get(Map<String, Object> kwargs, String key, Class<T> type, T def, boolean remove) {
         if (kwargs.containsKey(key)) {
             Object value = kwargs.get(key);
-            if (type.isInstance(value)) {
-                return remove ? (T) kwargs.remove(key) : (T) kwargs.get(key);
-            } else {
-                throw new IllegalArgumentException(
-                        "Expected value of type " + type + " for key " + key + " but got " + value.getClass());
+            if (value != null) {
+                if (type.isInstance(value)) {
+                    return remove ? (T) kwargs.remove(key) : (T) kwargs.get(key);
+                } else {
+                    throw new IllegalArgumentException(
+                            "Expected value of type " + type + " for key " + key + " but got " + value.getClass());
+                }
             }
         }
         return def;
