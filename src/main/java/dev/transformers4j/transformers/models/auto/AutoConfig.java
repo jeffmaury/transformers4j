@@ -7,8 +7,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +21,7 @@ import dev.transformers4j.transformers.MapUtil;
 import dev.transformers4j.transformers.PretrainedConfig;
 import dev.transformers4j.transformers.PretrainedConfigFactory;
 import dev.transformers4j.transformers.utils.Init;
+import io.vavr.Tuple2;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,18 +236,8 @@ public abstract class AutoConfig {
 
     private static <T extends PretrainedConfigFactory<? extends PretrainedConfig>> T getPretrainedConfigFactory(
             String model_type) {
-        var loader = ServiceLoader.load(PretrainedConfigFactory.class);
-        return (T) loader.stream().filter(config -> {
-            var modelType = config.type().getAnnotation(ModelType.class);
-            if (modelType != null) {
-                for (String type : modelType.value()) {
-                    if (type.equals(model_type)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }).findFirst().map(p -> p.get()).orElse(null);
+        var modelSupport = ModelSupport.getModelSupport(model_type);
+        return modelSupport == null ? null : modelSupport.getConfigFactory();
     }
 
     private static List<String> getSupportedModelTypes() {
@@ -263,7 +252,7 @@ public abstract class AutoConfig {
         return modelTypes;
     }
 
-    public static <T extends PretrainedConfig> T for_model(String model_type, Map<String, Object> kwargs)
+    public static <T extends PretrainedConfig> Tuple2<T, Map<String, Object>> for_model(String model_type, Map<String, Object> kwargs)
             throws IOException {
         var config_class = getPretrainedConfigFactory(model_type);
         if (config_class != null) {
@@ -273,8 +262,8 @@ public abstract class AutoConfig {
                 + String.join(",", getSupportedModelTypes()));
     }
 
-    public static <T extends PretrainedConfig> T from_pretrained(Path pretrained_model_name_or_path,
-            Map<String, Object> kwargs) throws IOException {
+    public static <T extends PretrainedConfig> Tuple2<T, Map<String, Object>> from_pretrained(Path pretrained_model_name_or_path,
+                                                                        Map<String, Object> kwargs) throws IOException {
         try {
             Boolean use_auth_token = MapUtil.pop(kwargs, "use_auth_token", Boolean.class, null);
             if (use_auth_token != null) {
@@ -311,7 +300,7 @@ public abstract class AutoConfig {
                     // TODO: check dynamic loading
                     // config_class.register_for_auto_class();
                 }
-                return (T) MethodUtils.invokeStaticMethod(config_class, "from_pretrained", config_class,
+                return (Tuple2<T, Map<String, Object>>) MethodUtils.invokeStaticMethod(config_class, "from_pretrained", config_class,
                         pretrained_model_name_or_path);
 
             } else if (config_dict.containsKey("model_type")) {
@@ -347,7 +336,7 @@ public abstract class AutoConfig {
         }
     }
 
-    public static <T extends PretrainedConfig> T from_pretrained(Path pretrained_model_name_or_path)
+    public static <T extends PretrainedConfig> Tuple2<PretrainedConfig, Map<String, Object>> from_pretrained(Path pretrained_model_name_or_path)
             throws IOException {
         return from_pretrained(pretrained_model_name_or_path, new HashMap<>());
     }

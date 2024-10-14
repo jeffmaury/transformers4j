@@ -2,7 +2,6 @@ package dev.transformers4j.transformers.models.bert;
 
 import dev.transformers4j.transformers.MapUtil;
 import dev.transformers4j.transformers.PretrainedConfig;
-import dev.transformers4j.transformers.models.auto.ModelType;
 
 import java.util.Map;
 

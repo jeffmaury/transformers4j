@@ -24,10 +24,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dev.transformers4j.Init.__version__;
 import static dev.transformers4j.hub.Constants.DEFAULT_ETAG_TIMEOUT;
+import static dev.transformers4j.hub.FileDownload.REGEX_COMMIT_HASH;
 import static dev.transformers4j.hub.FileDownload._CACHED_NO_EXIST;
 import static dev.transformers4j.hub.FileDownload.hf_hub_download;
 import static dev.transformers4j.hub.FileDownload.http_get;
@@ -117,6 +119,22 @@ public class Hub {
         sagemarker_object.put("sm_deep_learning_container_tag", dlc_tag);
         sagemarker_object.put("sm_account_id", account_id);
         return sagemarker_object;
+    }
+
+    /**
+    Extracts the commit hash from a resolved filename toward a cache file.
+    */
+    public static String extract_commit_hash(Path resolved_file, String commit_hash) {
+        if (resolved_file == null && commit_hash != null) {
+            return commit_hash;
+        }
+        var _resolved_file = resolved_file.toAbsolutePath().toString().replace(File.separatorChar, '/');
+        var search = Pattern.compile("snapshots/([^/]+)/").matcher(_resolved_file);
+        if (!search.find()) {
+            return null;
+        }
+        commit_hash = search.group(1);
+        return REGEX_COMMIT_HASH.matcher(commit_hash).matches() ? commit_hash : null;
     }
 
     /**

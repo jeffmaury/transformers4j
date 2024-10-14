@@ -76,7 +76,7 @@ public class FileDownload {
     private static final Pattern HEADER_FILENAME_PATTERN = Pattern.compile("filename=\"(.*?)\";");
 
     // Regex to check if the revision IS directly a commit_hash
-    private static final Pattern REGEX_COMMIT_HASH = Pattern.compile("^[a-fA-F0-9]{40}$");
+    public static final Pattern REGEX_COMMIT_HASH = Pattern.compile("^[a-fA-F0-9]{40}$");
 
     // Regex to check if the file etag IS a valid sha256
     private static final Pattern REGEX_SHA256 = Pattern.compile("^[0-9a-f]{64}$");

@@ -188,7 +188,7 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
      *
      * Returns: [`PretrainedConfig`]: The configuration object instantiated from those parameters.
      */
-    public <T extends PretrainedConfig> T from_dict(Map<String, Object> config_dict, Map<String, Object> kwargs) {
+    public <T extends PretrainedConfig> Tuple2<T, Map<String, Object>> from_dict(Map<String, Object> config_dict, Map<String, Object> kwargs) {
         try {
             var return_unused_kwargs = MapUtil.pop(kwargs, "return_unused_kwargs", Boolean.class, false);
             // Those arguments may be passed along for our internal telemetry.
@@ -246,7 +246,11 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
             }
 
             LOGGER.info("Model config " + config);
-            return (T) config;
+            if (return_unused_kwargs) {
+                return new Tuple2<T, Map<String, Object>>((T) config, kwargs);
+            } else {
+                return new Tuple2<T, Map<String, Object>>((T) config, null);
+            }
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

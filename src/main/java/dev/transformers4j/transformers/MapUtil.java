@@ -28,9 +28,15 @@ public class MapUtil {
         return get(kwargs, key, type, def, true);
     }
 
-    public static Map<String, Object> merge(Map<String, Object> original, String name, String value) {
+    public static Map<String, Object> merge(Map<String, Object> original, String name, Object value) {
         var copy = ObjectUtils.clone(original);
         copy.put(name, value);
+        return copy;
+    }
+
+    public static Map<String, Object> merge(Map<String, Object> first, Map<String, Object> second) {
+        var copy = ObjectUtils.clone(first);
+        copy.putAll(second);
         return copy;
     }
 }
