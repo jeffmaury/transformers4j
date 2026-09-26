@@ -85,45 +85,24 @@ public class FileDownload {
     }
 
     /**
-     * Construct the URL of a file from the given information.
-     *
-     * The resolved address can either be a huggingface.co-hosted url, or a link to Cloudfront (a Content Delivery
-     * Network, or CDN) for large files which are more than a few MBs.
-     *
-     * Args: repo_id (`str`): A namespace (user or an organization) name and a repo name separated by a `/`. filename
-     * (`str`): The name of the file in the repo. subfolder (`str`, *optional*): An optional value corresponding to a
-     * folder inside the repo. repo_type (`str`, *optional*): Set to `"dataset"` or `"space"` if downloading from a
-     * dataset or space, `None` or `"model"` if downloading from a model. Default is `None`. revision (`str`,
-     * *optional*): An optional Git revision id which can be a branch name, a tag, or a commit hash.
-     *
-     * Example:
-     *
-     * ```python >>> from huggingface_hub import hf_hub_url
-     *
-     * >>> hf_hub_url( ... repo_id="julien-c/EsperBERTo-small", filename="pytorch_model.bin" ... )
-     * 'https://huggingface.co/julien-c/EsperBERTo-small/resolve/main/pytorch_model.bin' ```
-     *
-     * <Tip>
-     *
-     * Notes:
-     *
-     * Cloudfront is replicated over the globe so downloads are way faster for the end user (and it also lowers our
-     * bandwidth costs).
-     *
+     * Construct the URL of a file from the given information. The resolved address can either be a
+     * huggingface.co-hosted url, or a link to Cloudfront (a Content Delivery Network, or CDN) for large files which are
+     * more than a few MBs. Args: repo_id (`str`): A namespace (user or an organization) name and a repo name separated
+     * by a `/`. filename (`str`): The name of the file in the repo. subfolder (`str`, *optional*): An optional value
+     * corresponding to a folder inside the repo. repo_type (`str`, *optional*): Set to `"dataset"` or `"space"` if
+     * downloading from a dataset or space, `None` or `"model"` if downloading from a model. Default is `None`. revision
+     * (`str`, *optional*): An optional Git revision id which can be a branch name, a tag, or a commit hash. Example:
+     * ```python >>> from huggingface_hub import hf_hub_url >>> hf_hub_url( ... repo_id="julien-c/EsperBERTo-small",
+     * filename="pytorch_model.bin" ... )
+     * 'https://huggingface.co/julien-c/EsperBERTo-small/resolve/main/pytorch_model.bin' ``` <Tip> Notes: Cloudfront is
+     * replicated over the globe so downloads are way faster for the end user (and it also lowers our bandwidth costs).
      * Cloudfront aggressively caches files by default (default TTL is 24 hours), however this is not an issue here
      * because we implement a git-based versioning system on huggingface.co, which means that we store the files on
      * S3/Cloudfront in a content-addressable way (i.e., the file name is its hash). Using content-addressable filenames
-     * means cache can't ever be stale.
-     *
-     * In terms of client-side caching from this library, we base our caching on the objects' entity tag (`ETag`), which
-     * is an identifier of a specific version of a resource [1]_. An object's ETag is: its git-sha1 if stored in git, or
-     * its sha256 if stored in git-lfs.
-     *
-     * </Tip>
-     *
-     * References:
-     *
-     * - [1] https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+     * means cache can't ever be stale. In terms of client-side caching from this library, we base our caching on the
+     * objects' entity tag (`ETag`), which is an identifier of a specific version of a resource [1]_. An object's ETag
+     * is: its git-sha1 if stored in git, or its sha256 if stored in git-lfs. </Tip> References: - [1]
+     * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
      */
     private static String hf_hub_url(String repo_id, String filename, String subfolder, String repo_type,
             String revision, String endpoint) {
@@ -155,16 +134,12 @@ public class FileDownload {
     }
 
     /**
-     * Generate a local filename from a url.
-     *
-     * Convert `url` into a hashed filename in a reproducible way. If `etag` is specified, append its hash to the url's,
-     * delimited by a period. If the url ends with .h5 (Keras HDF5 weights) adds '.h5' to the name so that TF 2.0 can
-     * identify it as a HDF5 file (see
+     * Generate a local filename from a url. Convert `url` into a hashed filename in a reproducible way. If `etag` is
+     * specified, append its hash to the url's, delimited by a period. If the url ends with .h5 (Keras HDF5 weights)
+     * adds '.h5' to the name so that TF 2.0 can identify it as a HDF5 file (see
      * https://github.com/tensorflow/tensorflow/blob/00fad90125b18b80fe054de1055770cfb8fe4ba3/tensorflow/python/keras/engine/network.py#L1380)
-     *
-     * Args: url (`str`): The address to the file. etag (`str`, *optional*): The ETag of the file.
-     *
-     * Returns: The generated filename.
+     * Args: url (`str`): The address to the file. etag (`str`, *optional*): The ETag of the file. Returns: The
+     * generated filename.
      */
     private static String url_to_filename(String url, String etag) {
         var url_bytes = url.getBytes(StandardCharsets.UTF_8);
@@ -208,21 +183,19 @@ public class FileDownload {
     }
 
     /**
-     * Download a remote file. Do not gobble up errors, and will return errors tailored to the Hugging Face Hub.
-     *
-     * If ConnectionError (SSLError) or ReadTimeout happen while streaming data from the server, it is most likely a
+     * Download a remote file. Do not gobble up errors, and will return errors tailored to the Hugging Face Hub. If
+     * ConnectionError (SSLError) or ReadTimeout happen while streaming data from the server, it is most likely a
      * transient error (network outage?). We log a warning message and try to resume the download a few times before
-     * giving up. The method gives up after 5 attempts if no new data has being received from the server.
-     *
-     * Args: url (`str`): The URL of the file to download. temp_file (`BinaryIO`): The file-like object where to save
-     * the file. proxies (`dict`, *optional*): Dictionary mapping protocol to the URL of the proxy passed to
-     * `requests.request`. resume_size (`float`, *optional*): The number of bytes already downloaded. If set to 0
-     * (default), the whole file is download. If set to a positive number, the download will resume at the given
-     * position. headers (`dict`, *optional*): Dictionary of HTTP Headers to send with the request. expected_size
-     * (`int`, *optional*): The expected size of the file to download. If set, the download will raise an error if the
-     * size of the received content is different from the expected one. displayed_filename (`str`, *optional*): The
-     * filename of the file that is being downloaded. Value is used only to display a nice progress bar. If not set, the
-     * filename is guessed from the URL or the `Content-Disposition` header.
+     * giving up. The method gives up after 5 attempts if no new data has being received from the server. Args: url
+     * (`str`): The URL of the file to download. temp_file (`BinaryIO`): The file-like object where to save the file.
+     * proxies (`dict`, *optional*): Dictionary mapping protocol to the URL of the proxy passed to `requests.request`.
+     * resume_size (`float`, *optional*): The number of bytes already downloaded. If set to 0 (default), the whole file
+     * is download. If set to a positive number, the download will resume at the given position. headers (`dict`,
+     * *optional*): Dictionary of HTTP Headers to send with the request. expected_size (`int`, *optional*): The expected
+     * size of the file to download. If set, the download will raise an error if the size of the received content is
+     * different from the expected one. displayed_filename (`str`, *optional*): The filename of the file that is being
+     * downloaded. Value is used only to display a nice progress bar. If not set, the filename is guessed from the URL
+     * or the `Content-Disposition` header.
      */
 
     public static void http_get(String url, OutputStream temp_file, Map<String, String> proxies, float resume_size,
@@ -313,45 +286,33 @@ public class FileDownload {
     }
 
     /**
-     * Download from a given URL and cache it if it's not already present in the local cache.
-     *
-     * Given a URL, this function looks for the corresponding file in the local cache. If it's not there, download it.
-     * Then return the path to the cached file.
-     *
-     * Will raise errors tailored to the Hugging Face Hub.
-     *
-     * Args: url (`str`): The path to the file to be downloaded. library_name (`str`, *optional*): The name of the
-     * library to which the object corresponds. library_version (`str`, *optional*): The version of the library.
-     * cache_dir (`str`, `Path`, *optional*): Path to the folder where cached files are stored. user_agent (`dict`,
-     * `str`, *optional*): The user-agent info in the form of a dictionary or a string. force_download (`bool`,
-     * *optional*, defaults to `False`): Whether the file should be downloaded even if it already exists in the local
-     * cache. force_filename (`str`, *optional*): Use this name instead of a generated file name. proxies (`dict`,
-     * *optional*): Dictionary mapping protocol to the URL of the proxy passed to `requests.request`. etag_timeout
-     * (`float`, *optional* defaults to `10`): When fetching ETag, how many seconds to wait for the server to send data
-     * before giving up which is passed to `requests.request`. token (`bool`, `str`, *optional*): A token to be used for
-     * the download. - If `True`, the token is read from the HuggingFace config folder. - If a string, it's used as the
-     * authentication token. local_files_only (`bool`, *optional*, defaults to `False`): If `True`, avoid downloading
-     * the file and return the path to the local cached file if it exists. legacy_cache_layout (`bool`, *optional*,
-     * defaults to `False`): Set this parameter to `True` to mention that you'd like to continue the old cache layout.
-     * Putting this to `True` manually will not raise any warning when using `cached_download`. We recommend using
-     * `hf_hub_download` to take advantage of the new cache.
-     *
-     * Returns: Local path (string) of file or if networking is off, last version of file cached on disk.
-     *
-     * <Tip>
-     *
-     * Raises the following errors:
-     *
-     * - [`EnvironmentError`](https://docs.python.org/3/library/exceptions.html#EnvironmentError) if `token=True` and
-     * the token cannot be found. - [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError) if ETag
-     * cannot be determined. - [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError) if some
-     * parameter value is invalid - [`~utils.RepositoryNotFoundError`] If the repository to download from cannot be
-     * found. This may be because it doesn't exist, or because it is set to `private` and you do not have access. -
-     * [`~utils.RevisionNotFoundError`] If the revision to download from cannot be found. -
-     * [`~utils.EntryNotFoundError`] If the file to download cannot be found. - [`~utils.LocalEntryNotFoundError`] If
-     * network is disabled or unavailable and file is not found in cache.
-     *
-     * </Tip>
+     * Download from a given URL and cache it if it's not already present in the local cache. Given a URL, this function
+     * looks for the corresponding file in the local cache. If it's not there, download it. Then return the path to the
+     * cached file. Will raise errors tailored to the Hugging Face Hub. Args: url (`str`): The path to the file to be
+     * downloaded. library_name (`str`, *optional*): The name of the library to which the object corresponds.
+     * library_version (`str`, *optional*): The version of the library. cache_dir (`str`, `Path`, *optional*): Path to
+     * the folder where cached files are stored. user_agent (`dict`, `str`, *optional*): The user-agent info in the form
+     * of a dictionary or a string. force_download (`bool`, *optional*, defaults to `False`): Whether the file should be
+     * downloaded even if it already exists in the local cache. force_filename (`str`, *optional*): Use this name
+     * instead of a generated file name. proxies (`dict`, *optional*): Dictionary mapping protocol to the URL of the
+     * proxy passed to `requests.request`. etag_timeout (`float`, *optional* defaults to `10`): When fetching ETag, how
+     * many seconds to wait for the server to send data before giving up which is passed to `requests.request`. token
+     * (`bool`, `str`, *optional*): A token to be used for the download. - If `True`, the token is read from the
+     * HuggingFace config folder. - If a string, it's used as the authentication token. local_files_only (`bool`,
+     * *optional*, defaults to `False`): If `True`, avoid downloading the file and return the path to the local cached
+     * file if it exists. legacy_cache_layout (`bool`, *optional*, defaults to `False`): Set this parameter to `True` to
+     * mention that you'd like to continue the old cache layout. Putting this to `True` manually will not raise any
+     * warning when using `cached_download`. We recommend using `hf_hub_download` to take advantage of the new cache.
+     * Returns: Local path (string) of file or if networking is off, last version of file cached on disk. <Tip> Raises
+     * the following errors: - [`EnvironmentError`](https://docs.python.org/3/library/exceptions.html#EnvironmentError)
+     * if `token=True` and the token cannot be found. -
+     * [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError) if ETag cannot be determined. -
+     * [`ValueError`](https://docs.python.org/3/library/exceptions.html#ValueError) if some parameter value is invalid -
+     * [`~utils.RepositoryNotFoundError`] If the repository to download from cannot be found. This may be because it
+     * doesn't exist, or because it is set to `private` and you do not have access. - [`~utils.RevisionNotFoundError`]
+     * If the revision to download from cannot be found. - [`~utils.EntryNotFoundError`] If the file to download cannot
+     * be found. - [`~utils.LocalEntryNotFoundError`] If network is disabled or unavailable and file is not found in
+     * cache. </Tip>
      */
     public static Path cached_download(String url, String library_name, String library_version, Path cache_dir,
             Either<Map<String, Object>, String> user_agent, boolean force_download, String force_filename,
@@ -474,7 +435,8 @@ public class FileDownload {
             lock_path = Paths.get("\\\\?\\" + cache_path.toAbsolutePath().toString());
         }
 
-        try (var channel = FileChannel.open(lock_path); var lock = channel.tryLock()) {
+        try (var channel = FileChannel.open(lock_path);
+                var lock = channel.tryLock()) {
             _download_to_tmp_and_move(cache_path.resolve(".incomplete"), cache_path, url_to_download, proxies, headers,
                     expected_size, filename, force_download);
 
@@ -489,16 +451,11 @@ public class FileDownload {
     }
 
     /**
-     * Normalize ETag HTTP header, so it can be used to create nice filepaths.
-     *
-     * The HTTP spec allows two forms of ETag: ETag: W/"<etag_value>" ETag: "<etag_value>"
-     *
-     * For now, we only expect the second form from the server, but we want to be future-proof so we support both. For
-     * more context, see `TestNormalizeEtag` tests and https://github.com/huggingface/huggingface_hub/pull/1428.
-     *
-     * Args: etag (`str`, *optional*): HTTP header
-     *
-     * Returns: `str` or `None`: string that can be used as a nice directory name. Returns `None` if input is None.
+     * Normalize ETag HTTP header, so it can be used to create nice filepaths. The HTTP spec allows two forms of ETag:
+     * ETag: W/"<etag_value>" ETag: "<etag_value>" For now, we only expect the second form from the server, but we want
+     * to be future-proof so we support both. For more context, see `TestNormalizeEtag` tests and
+     * https://github.com/huggingface/huggingface_hub/pull/1428. Args: etag (`str`, *optional*): HTTP header Returns:
+     * `str` or `None`: string that can be used as a nice directory name. Returns `None` if input is None.
      */
     private static String _normalize_etag(String etag) {
         if (etag == null) {
@@ -508,29 +465,23 @@ public class FileDownload {
     }
 
     /**
-     * Create a symbolic link named dst pointing to src.
-     *
-     * By default, it will try to create a symlink using a relative path. Relative paths have 2 advantages: - If the
-     * cache_folder is moved (example: back-up on a shared drive), relative paths within the cache folder will not
-     * break. - Relative paths seems to be better handled on Windows. Issue was reported 3 times in less than a week
-     * when changing from relative to absolute paths. See https://github.com/huggingface/huggingface_hub/issues/1398,
-     * https://github.com/huggingface/diffusers/issues/2729 and https://github.com/huggingface/transformers/pull/22228.
-     * NOTE: The issue with absolute paths doesn't happen on admin mode. When creating a symlink from the cache to a
-     * local folder, it is possible that a relative path cannot be created. This happens when paths are not on the same
-     * volume. In that case, we use absolute paths.
-     *
-     *
-     * The result layout looks something like └── [ 128] snapshots ├── [ 128] 2439f60ef33a0d46d85da5001d52aeda5b00ce9f │
-     * ├── [ 52] README.md -> ../../../blobs/d7edf6bd2a681fb0175f7735299831ee1b22b812 │ └── [ 76] pytorch_model.bin ->
-     * ../../../blobs/403450e234d65943a7dcf7e05a771ce3c92faa84dd07db4ac20f592037a1e4bd
-     *
-     * If symlinks cannot be created on this platform (most likely to be Windows), the workaround is to avoid symlinks
-     * by having the actual file in `dst`. If it is a new file (`new_blob=True`), we move it to `dst`. If it is not a
-     * new file (`new_blob=False`), we don't know if the blob file is already referenced elsewhere. To avoid breaking
-     * existing cache, the file is duplicated on the disk.
-     *
-     * In case symlinks are not supported, a warning message is displayed to the user once when loading
-     * `huggingface_hub`. The warning message can be disabled with the `DISABLE_SYMLINKS_WARNING` environment variable.
+     * Create a symbolic link named dst pointing to src. By default, it will try to create a symlink using a relative
+     * path. Relative paths have 2 advantages: - If the cache_folder is moved (example: back-up on a shared drive),
+     * relative paths within the cache folder will not break. - Relative paths seems to be better handled on Windows.
+     * Issue was reported 3 times in less than a week when changing from relative to absolute paths. See
+     * https://github.com/huggingface/huggingface_hub/issues/1398, https://github.com/huggingface/diffusers/issues/2729
+     * and https://github.com/huggingface/transformers/pull/22228. NOTE: The issue with absolute paths doesn't happen on
+     * admin mode. When creating a symlink from the cache to a local folder, it is possible that a relative path cannot
+     * be created. This happens when paths are not on the same volume. In that case, we use absolute paths. The result
+     * layout looks something like └── [ 128] snapshots ├── [ 128] 2439f60ef33a0d46d85da5001d52aeda5b00ce9f │ ├── [ 52]
+     * README.md -> ../../../blobs/d7edf6bd2a681fb0175f7735299831ee1b22b812 │ └── [ 76] pytorch_model.bin ->
+     * ../../../blobs/403450e234d65943a7dcf7e05a771ce3c92faa84dd07db4ac20f592037a1e4bd If symlinks cannot be created on
+     * this platform (most likely to be Windows), the workaround is to avoid symlinks by having the actual file in
+     * `dst`. If it is a new file (`new_blob=True`), we move it to `dst`. If it is not a new file (`new_blob=False`), we
+     * don't know if the blob file is already referenced elsewhere. To avoid breaking existing cache, the file is
+     * duplicated on the disk. In case symlinks are not supported, a warning message is displayed to the user once when
+     * loading `huggingface_hub`. The warning message can be disabled with the `DISABLE_SYMLINKS_WARNING` environment
+     * variable.
      */
     private static void _create_symlink(Path src, Path dst, boolean new_blob) throws IOException {
         if (System.getProperty("os.name").toLowerCase().contains("win")) {
@@ -546,24 +497,16 @@ public class FileDownload {
 
     /**
      * Explores the cache to return the latest cached file for a given revision if found. This function will not raise
-     * any exception if the file in not cached.
-     *
-     * Args: cache_dir (`str` or `os.PathLike`): The folder where the cached files lie. repo_id (`str`): The ID of the
-     * repo on huggingface.co. filename (`str`): The filename to look for inside `repo_id`. revision (`str`,
-     * *optional*): The specific model version to use. Will default to `"main"` if it's not provided and no
-     * `commit_hash` is provided either. repo_type (`str`, *optional*): The type of the repository. Will default to
-     * `"model"`.
-     *
-     * Returns: `Optional[str]` or `_CACHED_NO_EXIST`: Will return `None` if the file was not cached. Otherwise: - The
-     * exact path to the cached file if it's found in the cache - A special value `_CACHED_NO_EXIST` if the file does
-     * not exist at the given commit hash and this fact was cached.
-     *
-     * Example:
-     *
-     * ```python from huggingface_hub import try_to_load_from_cache, _CACHED_NO_EXIST
-     *
-     * filepath = try_to_load_from_cache() if isinstance(filepath, str): # file exists and is cached ... elif filepath
-     * is _CACHED_NO_EXIST: # non-existence of file is cached ... else: # file is not cached ... ```
+     * any exception if the file in not cached. Args: cache_dir (`str` or `os.PathLike`): The folder where the cached
+     * files lie. repo_id (`str`): The ID of the repo on huggingface.co. filename (`str`): The filename to look for
+     * inside `repo_id`. revision (`str`, *optional*): The specific model version to use. Will default to `"main"` if
+     * it's not provided and no `commit_hash` is provided either. repo_type (`str`, *optional*): The type of the
+     * repository. Will default to `"model"`. Returns: `Optional[str]` or `_CACHED_NO_EXIST`: Will return `None` if the
+     * file was not cached. Otherwise: - The exact path to the cached file if it's found in the cache - A special value
+     * `_CACHED_NO_EXIST` if the file does not exist at the given commit hash and this fact was cached. Example:
+     * ```python from huggingface_hub import try_to_load_from_cache, _CACHED_NO_EXIST filepath =
+     * try_to_load_from_cache() if isinstance(filepath, str): # file exists and is cached ... elif filepath is
+     * _CACHED_NO_EXIST: # non-existence of file is cached ... else: # file is not cached ... ```
      */
     public static Path try_to_load_from_cache(String repo_id, String filename, Path cache_dir, String revision,
             String repo_type) throws IOException {
@@ -619,18 +562,16 @@ public class FileDownload {
     }
 
     /**
-     * Fetch metadata of a file versioned on the Hub for a given url.
-     *
-     * Args: url (`str`): File url, for example returned by [`hf_hub_url`]. token (`str` or `bool`, *optional*): A token
-     * to be used for the download. - If `True`, the token is read from the HuggingFace config folder. - If `False` or
-     * `None`, no token is provided. - If a string, it's used as the authentication token. proxies (`dict`, *optional*):
-     * Dictionary mapping protocol to the URL of the proxy passed to `requests.request`. timeout (`float`, *optional*,
-     * defaults to 10): How many seconds to wait for the server to send metadata before giving up. library_name (`str`,
-     * *optional*): The name of the library to which the object corresponds. library_version (`str`, *optional*): The
-     * version of the library. user_agent (`dict`, `str`, *optional*): The user-agent info in the form of a dictionary
-     * or a string. headers (`dict`, *optional*): Additional headers to be sent with the request.
-     *
-     * Returns: A [`HfFileMetadata`] object containing metadata such as location, etag, size and commit_hash.
+     * Fetch metadata of a file versioned on the Hub for a given url. Args: url (`str`): File url, for example returned
+     * by [`hf_hub_url`]. token (`str` or `bool`, *optional*): A token to be used for the download. - If `True`, the
+     * token is read from the HuggingFace config folder. - If `False` or `None`, no token is provided. - If a string,
+     * it's used as the authentication token. proxies (`dict`, *optional*): Dictionary mapping protocol to the URL of
+     * the proxy passed to `requests.request`. timeout (`float`, *optional*, defaults to 10): How many seconds to wait
+     * for the server to send metadata before giving up. library_name (`str`, *optional*): The name of the library to
+     * which the object corresponds. library_version (`str`, *optional*): The version of the library. user_agent
+     * (`dict`, `str`, *optional*): The user-agent info in the form of a dictionary or a string. headers (`dict`,
+     * *optional*): Additional headers to be sent with the request. Returns: A [`HfFileMetadata`] object containing
+     * metadata such as location, etag, size and commit_hash.
      */
     private static HfFileMetadata get_hf_file_metadata(String url, Either<Boolean, String> token,
             Map<String, String> proxies, Float timeout, String library_name, String library_version,
@@ -664,15 +605,13 @@ public class FileDownload {
     }
 
     /**
-     * Download a given file if it's not already present in the local cache.
-     *
-     * The new cache file layout looks like this: - The cache directory contains one subfolder per repo_id (namespaced
-     * by repo type) - inside each repo folder: - refs is a list of the latest known revision => commit_hash pairs -
-     * blobs contains the actual file blobs (identified by their git-sha or sha256, depending on whether they're LFS
-     * files or not) - snapshots contains one subfolder per commit, each "commit" contains the subset of the files that
-     * have been resolved at that particular commit. Each filename is a symlink to the blob at that particular commit.
-     *
-     * ``` [ 96] . └── [ 160] models--julien-c--EsperBERTo-small ├── [ 160] blobs │ ├── [321M]
+     * Download a given file if it's not already present in the local cache. The new cache file layout looks like this:
+     * - The cache directory contains one subfolder per repo_id (namespaced by repo type) - inside each repo folder: -
+     * refs is a list of the latest known revision => commit_hash pairs - blobs contains the actual file blobs
+     * (identified by their git-sha or sha256, depending on whether they're LFS files or not) - snapshots contains one
+     * subfolder per commit, each "commit" contains the subset of the files that have been resolved at that particular
+     * commit. Each filename is a symlink to the blob at that particular commit. ``` [ 96] . └── [ 160]
+     * models--julien-c--EsperBERTo-small ├── [ 160] blobs │ ├── [321M]
      * 403450e234d65943a7dcf7e05a771ce3c92faa84dd07db4ac20f592037a1e4bd │ ├── [ 398]
      * 7cb18dc9bafbfcf74629a4b760af1b160957a83e │ └── [1.4K] d7edf6bd2a681fb0175f7735299831ee1b22b812 ├── [ 96] refs │
      * └── [ 40] main └── [ 128] snapshots ├── [ 128] 2439f60ef33a0d46d85da5001d52aeda5b00ce9f │ ├── [ 52] README.md ->
@@ -680,35 +619,30 @@ public class FileDownload {
      * ../../blobs/403450e234d65943a7dcf7e05a771ce3c92faa84dd07db4ac20f592037a1e4bd └── [ 128]
      * bbc77c8132af1cc5cf678da3f1ddf2de43606d48 ├── [ 52] README.md ->
      * ../../blobs/7cb18dc9bafbfcf74629a4b760af1b160957a83e └── [ 76] pytorch_model.bin ->
-     * ../../blobs/403450e234d65943a7dcf7e05a771ce3c92faa84dd07db4ac20f592037a1e4bd ```
-     *
-     * If `local_dir` is provided, the file structure from the repo will be replicated in this location. When using this
-     * option, the `cache_dir` will not be used and a `.huggingface/` folder will be created at the root of `local_dir`
-     * to store some metadata related to the downloaded files. While this mechanism is not as robust as the main
-     * cache-system, it's optimized for regularly pulling the latest version of a repository.
-     *
-     * Args: repo_id (`str`): A user or an organization name and a repo name separated by a `/`. filename (`str`): The
-     * name of the file in the repo. subfolder (`str`, *optional*): An optional value corresponding to a folder inside
-     * the model repo. repo_type (`str`, *optional*): Set to `"dataset"` or `"space"` if downloading from a dataset or
-     * space, `None` or `"model"` if downloading from a model. Default is `None`. revision (`str`, *optional*): An
-     * optional Git revision id which can be a branch name, a tag, or a commit hash. library_name (`str`, *optional*):
-     * The name of the library to which the object corresponds. library_version (`str`, *optional*): The version of the
-     * library. cache_dir (`str`, `Path`, *optional*): Path to the folder where cached files are stored. local_dir
-     * (`str` or `Path`, *optional*): If provided, the downloaded file will be placed under this directory. user_agent
-     * (`dict`, `str`, *optional*): The user-agent info in the form of a dictionary or a string. force_download (`bool`,
-     * *optional*, defaults to `False`): Whether the file should be downloaded even if it already exists in the local
-     * cache. proxies (`dict`, *optional*): Dictionary mapping protocol to the URL of the proxy passed to
-     * `requests.request`. etag_timeout (`float`, *optional*, defaults to `10`): When fetching ETag, how many seconds to
-     * wait for the server to send data before giving up which is passed to `requests.request`. token (`str`, `bool`,
-     * *optional*): A token to be used for the download. - If `True`, the token is read from the HuggingFace config
-     * folder. - If a string, it's used as the authentication token. local_files_only (`bool`, *optional*, defaults to
-     * `False`): If `True`, avoid downloading the file and return the path to the local cached file if it exists.
-     * headers (`dict`, *optional*): Additional headers to be sent with the request. legacy_cache_layout (`bool`,
-     * *optional*, defaults to `False`): If `True`, uses the legacy file cache layout i.e. just call [`hf_hub_url`] then
-     * `cached_download`. This is deprecated as the new cache layout is more powerful.
-     *
-     * Returns: `str`: Local path of file or if networking is off, last version of file cached on disk.
-     *
+     * ../../blobs/403450e234d65943a7dcf7e05a771ce3c92faa84dd07db4ac20f592037a1e4bd ``` If `local_dir` is provided, the
+     * file structure from the repo will be replicated in this location. When using this option, the `cache_dir` will
+     * not be used and a `.huggingface/` folder will be created at the root of `local_dir` to store some metadata
+     * related to the downloaded files. While this mechanism is not as robust as the main cache-system, it's optimized
+     * for regularly pulling the latest version of a repository. Args: repo_id (`str`): A user or an organization name
+     * and a repo name separated by a `/`. filename (`str`): The name of the file in the repo. subfolder (`str`,
+     * *optional*): An optional value corresponding to a folder inside the model repo. repo_type (`str`, *optional*):
+     * Set to `"dataset"` or `"space"` if downloading from a dataset or space, `None` or `"model"` if downloading from a
+     * model. Default is `None`. revision (`str`, *optional*): An optional Git revision id which can be a branch name, a
+     * tag, or a commit hash. library_name (`str`, *optional*): The name of the library to which the object corresponds.
+     * library_version (`str`, *optional*): The version of the library. cache_dir (`str`, `Path`, *optional*): Path to
+     * the folder where cached files are stored. local_dir (`str` or `Path`, *optional*): If provided, the downloaded
+     * file will be placed under this directory. user_agent (`dict`, `str`, *optional*): The user-agent info in the form
+     * of a dictionary or a string. force_download (`bool`, *optional*, defaults to `False`): Whether the file should be
+     * downloaded even if it already exists in the local cache. proxies (`dict`, *optional*): Dictionary mapping
+     * protocol to the URL of the proxy passed to `requests.request`. etag_timeout (`float`, *optional*, defaults to
+     * `10`): When fetching ETag, how many seconds to wait for the server to send data before giving up which is passed
+     * to `requests.request`. token (`str`, `bool`, *optional*): A token to be used for the download. - If `True`, the
+     * token is read from the HuggingFace config folder. - If a string, it's used as the authentication token.
+     * local_files_only (`bool`, *optional*, defaults to `False`): If `True`, avoid downloading the file and return the
+     * path to the local cached file if it exists. headers (`dict`, *optional*): Additional headers to be sent with the
+     * request. legacy_cache_layout (`bool`, *optional*, defaults to `False`): If `True`, uses the legacy file cache
+     * layout i.e. just call [`hf_hub_url`] then `cached_download`. This is deprecated as the new cache layout is more
+     * powerful. Returns: `str`: Local path of file or if networking is off, last version of file cached on disk.
      * Raises: - [`EnvironmentError`](https://docs.python.org/3/library/exceptions.html#EnvironmentError) if
      * `token=True` and the token cannot be found. -
      * [`OSError`](https://docs.python.org/3/library/exceptions.html#OSError) if ETag cannot be determined. -
@@ -801,9 +735,8 @@ public class FileDownload {
     }
 
     /**
-     * Download a given file to a cache folder, if not already present.
-     *
-     * Method should not be called directly. Please use `hf_hub_download` instead.
+     * Download a given file to a cache folder, if not already present. Method should not be called directly. Please use
+     * `hf_hub_download` instead.
      */
     private static Path _hf_hub_download_to_cache_dir(
             // Destination
@@ -926,9 +859,8 @@ public class FileDownload {
     }
 
     /**
-     * Download a given file to a local folder, if not already present.
-     *
-     * Method should not be called directly. Please use `hf_hub_download` instead.
+     * Download a given file to a local folder, if not already present. Method should not be called directly. Please use
+     * `hf_hub_download` instead.
      */
     private static Path _hf_hub_download_to_local_dir(Path local_dir,
             // File info
@@ -1015,13 +947,10 @@ public class FileDownload {
     }
 
     /**
-     * Get metadata for a file on the Hub, safely handling network issues.
-     *
-     * Returns either the etag, commit_hash and expected size of the file, or the error raised while fetching the
-     * metadata.
-     *
-     * NOTE: This function mutates `headers` inplace! It removes the `authorization` header if the file is a LFS blob
-     * and the domain of the url is different from the domain of the location (typically an S3 bucket).
+     * Get metadata for a file on the Hub, safely handling network issues. Returns either the etag, commit_hash and
+     * expected size of the file, or the error raised while fetching the metadata. NOTE: This function mutates `headers`
+     * inplace! It removes the `authorization` header if the file is a LFS blob and the domain of the url is different
+     * from the domain of the location (typically an S3 bucket).
      */
     private static Tuple5<String, String, String, Integer, Exception> _get_metadata_or_catch_error(String repo_id,
             String filename, String repo_type, String revision, String endpoint, Map<String, String> proxies,
@@ -1169,14 +1098,11 @@ public class FileDownload {
     }
 
     /**
-     * Download content from a URL to a destination path.
-     *
-     * Internal logic: - return early if file is already downloaded - resume download if possible (from incomplete file)
-     * - do not resume download if `force_download=True` or `HF_HUB_ENABLE_HF_TRANSFER=True` - check disk space before
-     * downloading - download content to a temporary file - set correct permissions on temporary file - move the
-     * temporary file to the destination path
-     *
-     * Both `incomplete_path` and `destination_path` must be on the same volume to avoid a local copy.
+     * Download content from a URL to a destination path. Internal logic: - return early if file is already downloaded -
+     * resume download if possible (from incomplete file) - do not resume download if `force_download=True` or
+     * `HF_HUB_ENABLE_HF_TRANSFER=True` - check disk space before downloading - download content to a temporary file -
+     * set correct permissions on temporary file - move the temporary file to the destination path Both
+     * `incomplete_path` and `destination_path` must be on the same volume to avoid a local copy.
      */
     private static void _download_to_tmp_and_move(Path incomplete_path, Path destination_path, String url_to_download,
             Map<String, String> proxies, Map<String, String> headers, Integer expected_size, String filename,
@@ -1237,14 +1163,10 @@ public class FileDownload {
     }
 
     /**
-     * Set correct permission before moving a blob from tmp directory to cache dir.
-     *
-     * Do not take into account the `umask` from the process as there is no convenient way to get it that is
-     * thread-safe.
-     *
-     * See: - About umask: https://docs.python.org/3/library/os.html#os.umask - Thread-safety:
-     * https://stackoverflow.com/a/70343066 - About solution:
-     * https://github.com/huggingface/huggingface_hub/pull/1220#issuecomment-1326211591 - Fix issue:
+     * Set correct permission before moving a blob from tmp directory to cache dir. Do not take into account the `umask`
+     * from the process as there is no convenient way to get it that is thread-safe. See: - About umask:
+     * https://docs.python.org/3/library/os.html#os.umask - Thread-safety: https://stackoverflow.com/a/70343066 - About
+     * solution: https://github.com/huggingface/huggingface_hub/pull/1220#issuecomment-1326211591 - Fix issue:
      * https://github.com/huggingface/huggingface_hub/issues/1141 - Fix issue:
      * https://github.com/huggingface/huggingface_hub/issues/1215
      */
@@ -1263,9 +1185,8 @@ public class FileDownload {
     }
 
     /**
-     * Cache reference between a revision (tag, branch or truncated commit hash) and the corresponding commit hash.
-     *
-     * Does nothing if `revision` is already a proper `commit_hash` or reference is already cached.
+     * Cache reference between a revision (tag, branch or truncated commit hash) and the corresponding commit hash. Does
+     * nothing if `revision` is already a proper `commit_hash` or reference is already cached.
      */
     private static void _cache_commit_hash_for_specific_revision(Path storage_folder, String revision,
             String commit_hash) throws IOException {
@@ -1283,7 +1204,6 @@ public class FileDownload {
 
     /**
      * Return a serialized version of a hf.co repo name and type, safe for disk storage as a single non-nested folder.
-     *
      * Example: models--julien-c--EsperBERTo-small
      */
     private static String repo_folder_name(String repo_id, String repo_type) {
@@ -1295,10 +1215,9 @@ public class FileDownload {
     }
 
     /**
-     * Check disk usage and log a warning if there is not enough disk space to download the file.
-     *
-     * Args: expected_size (`int`): The expected size of the file in bytes. target_dir (`str`): The directory where the
-     * file will be stored after downloading.
+     * Check disk usage and log a warning if there is not enough disk space to download the file. Args: expected_size
+     * (`int`): The expected size of the file in bytes. target_dir (`str`): The directory where the file will be stored
+     * after downloading.
      */
     private static void _check_disk_space(int expected_size, Path target_dir) throws IOException {
         var free = Files.getFileStore(target_dir).getUsableSpace();

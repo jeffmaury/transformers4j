@@ -39,11 +39,8 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
     }
 
     /**
-     * Temporary method to deal with `token` and `use_auth_token`.
-     *
-     * This method is to avoid apply the same changes in all model config classes that overwrite `from_pretrained`.
-     *
-     * Need to clean up `use_auth_token` in a follow PR.
+     * Temporary method to deal with `token` and `use_auth_token`. This method is to avoid apply the same changes in all
+     * model config classes that overwrite `from_pretrained`. Need to clean up `use_auth_token` in a follow PR.
      */
     public static void _set_token_in_kwargs(Map<String, Object> kwargs, Object token) {
         // Some model config classes like CLIP define their own `from_pretrained` without the new argument `token` yet.
@@ -67,13 +64,9 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
 
     /**
      * From a `pretrained_model_name_or_path`, resolve to a dictionary of parameters, to be used for instantiating a
-     * [`PretrainedConfig`] using `from_dict`.
-     *
-     * Parameters: pretrained_model_name_or_path (`str` or `os.PathLike`): The identifier of the pre-trained checkpoint
-     * from which we want the dictionary of parameters.
-     *
-     * Returns: `Tuple[Dict, Dict]`: The dictionary(ies) that will be used to instantiate the configuration object.
-     *
+     * [`PretrainedConfig`] using `from_dict`. Parameters: pretrained_model_name_or_path (`str` or `os.PathLike`): The
+     * identifier of the pre-trained checkpoint from which we want the dictionary of parameters. Returns: `Tuple[Dict,
+     * Dict]`: The dictionary(ies) that will be used to instantiate the configuration object.
      */
     public Tuple2<Map<String, Object>, Map<String, Object>> get_config_dict(Path pretrained_model_name_or_path,
             Map<String, Object> kwargs) throws IOException {
@@ -179,14 +172,11 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
     }
 
     /**
-     * Instantiates a [`PretrainedConfig`] from a Python dictionary of parameters.
-     *
-     * Args: config_dict (`Dict[str, Any]`): Dictionary that will be used to instantiate the configuration object. Such
-     * a dictionary can be retrieved from a pretrained checkpoint by leveraging the
-     * [`~PretrainedConfig.get_config_dict`] method. kwargs (`Dict[str, Any]`): Additional parameters from which to
-     * initialize the configuration object.
-     *
-     * Returns: [`PretrainedConfig`]: The configuration object instantiated from those parameters.
+     * Instantiates a [`PretrainedConfig`] from a Python dictionary of parameters. Args: config_dict (`Dict[str, Any]`):
+     * Dictionary that will be used to instantiate the configuration object. Such a dictionary can be retrieved from a
+     * pretrained checkpoint by leveraging the [`~PretrainedConfig.get_config_dict`] method. kwargs (`Dict[str, Any]`):
+     * Additional parameters from which to initialize the configuration object. Returns: [`PretrainedConfig`]: The
+     * configuration object instantiated from those parameters.
      */
     public <T extends PretrainedConfig> T from_dict(Map<String, Object> config_dict, Map<String, Object> kwargs) {
         try {
@@ -260,11 +250,8 @@ public class PretrainedConfigFactory<T extends PretrainedConfig> {
     }
 
     /**
-     * Get the configuration file to use for this version of transformers.
-     *
-     * Args: configuration_files (`List[str]`): The list of available configuration files.
-     *
-     * Returns: `str`: The configuration file to use.
+     * Get the configuration file to use for this version of transformers. Args: configuration_files (`List[str]`): The
+     * list of available configuration files. Returns: `str`: The configuration file to use.
      */
     protected String get_configuration_file(String[] configuration_files) {
         var configuration_files_map = new HashMap<String, String>();

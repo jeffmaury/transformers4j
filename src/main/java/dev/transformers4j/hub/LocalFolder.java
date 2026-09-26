@@ -34,15 +34,10 @@ public class LocalFolder {
     }
 
     /**
-     * Compute paths to the files related to a download process.
-     *
-     * Folders containing the paths are all guaranteed to exist.
-     *
-     * Args: local_dir (`Path`): Path to the local directory in which files are downloaded. filename (`str`): Path of
-     * the file in the repo.
-     *
-     * Return: [`LocalDownloadFilePaths`]: the paths to the files (file_path, lock_path, metadata_path,
-     * incomplete_path).
+     * Compute paths to the files related to a download process. Folders containing the paths are all guaranteed to
+     * exist. Args: local_dir (`Path`): Path to the local directory in which files are downloaded. filename (`str`):
+     * Path of the file in the repo. Return: [`LocalDownloadFilePaths`]: the paths to the files (file_path, lock_path,
+     * metadata_path, incomplete_path).
      */
     public static LocalDownloadFilePaths
 
@@ -67,12 +62,9 @@ public class LocalFolder {
     }
 
     /**
-     * Read metadata about a file in the local directory related to a download process.
-     *
-     * Args: local_dir (`Path`): Path to the local directory in which files are downloaded. filename (`str`): Path of
-     * the file in the repo.
-     *
-     * Return: `[LocalDownloadFileMetadata]` or `None`: the metadata if it exists, `None` otherwise.
+     * Read metadata about a file in the local directory related to a download process. Args: local_dir (`Path`): Path
+     * to the local directory in which files are downloaded. filename (`str`): Path of the file in the repo. Return:
+     * `[LocalDownloadFileMetadata]` or `None`: the metadata if it exists, `None` otherwise.
      */
     public static LocalDownloadFileMetadata read_download_metadata(Path local_dir, String filename) throws IOException {
         LocalDownloadFileMetadata metadata = null;
@@ -111,9 +103,8 @@ public class LocalFolder {
     }
 
     /**
-     * Write metadata about a file in the local directory related to a download process.
-     *
-     * Args: local_dir (`Path`): Path to the local directory in which files are downloaded.
+     * Write metadata about a file in the local directory related to a download process. Args: local_dir (`Path`): Path
+     * to the local directory in which files are downloaded.
      */
     public static void write_download_metadata(Path local_dir, String filename, String commit_hash, String etag)
             throws IOException {

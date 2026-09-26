@@ -27,14 +27,10 @@ public class DynamicModuleUtils {
             Constants.HF_HOME + File.separatorChar + "modules");
 
     /**
-     * Extracts a class from a module file, present in the local folder or repository of a model.
-     *
-     * <Tip warning={true}>
+     * Extracts a class from a module file, present in the local folder or repository of a model. <Tip warning={true}>
      * <p>
      * Calling this function will execute the code in the module file found locally or downloaded from the Hub. It
-     * should therefore only be called on trusted repos.
-     *
-     * </Tip>
+     * should therefore only be called on trusted repos. </Tip>
      * <p>
      * <p>
      * <p>
@@ -63,13 +59,9 @@ public class DynamicModuleUtils {
      * from a space for instance). code_revision (`str`, *optional*, defaults to `"main"`): The specific revision to use
      * for the code on the Hub, if the code leaves in a different repository than the rest of the model. It can be a
      * branch name, a tag name, or a commit id, since we use a git-based system for storing models and other artifacts
-     * on huggingface.co, so `revision` can be any identifier allowed by git.
-     *
-     * <Tip>
+     * on huggingface.co, so `revision` can be any identifier allowed by git. <Tip>
      * <p>
-     * Passing `token=True` is required when you want to use a private model.
-     *
-     * </Tip>
+     * Passing `token=True` is required when you want to use a private model. </Tip>
      * <p>
      * Returns: `typing.Type`: The class, dynamically imported from the module.
      * <p>
