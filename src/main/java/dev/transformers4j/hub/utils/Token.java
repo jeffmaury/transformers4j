@@ -8,16 +8,11 @@ import java.nio.file.Paths;
 
 public class Token {
     /**
-     * Get token if user is logged in.
-     *
-     * Note: in most cases, you should use [`huggingface_hub.utils.build_hf_headers`] instead. This method is only
-     * useful if you want to retrieve the token for other purposes than sending an HTTP request.
-     *
-     * Token is retrieved in priority from the `HF_TOKEN` environment variable. Otherwise, we read the token file
-     * located in the Hugging Face home folder. Returns None if user is not logged in. To log in, use [`login`] or
-     * `huggingface-cli login`.
-     *
-     * Returns: `str` or `None`: The token, `None` if it doesn't exist.
+     * Get token if user is logged in. Note: in most cases, you should use [`huggingface_hub.utils.build_hf_headers`]
+     * instead. This method is only useful if you want to retrieve the token for other purposes than sending an HTTP
+     * request. Token is retrieved in priority from the `HF_TOKEN` environment variable. Otherwise, we read the token
+     * file located in the Hugging Face home folder. Returns None if user is not logged in. To log in, use [`login`] or
+     * `huggingface-cli login`. Returns: `str` or `None`: The token, `None` if it doesn't exist.
      */
     public static String get_token() {
         var res = _get_token_from_google_colab();
@@ -52,9 +47,7 @@ public class Token {
     }
 
     /**
-     * Clean token by removing trailing and leading spaces and newlines.
-     *
-     * If token is an empty string, return None.
+     * Clean token by removing trailing and leading spaces and newlines. If token is an empty string, return None.
      */
     private static String _clean_token(String token) {
         if (token == null) {

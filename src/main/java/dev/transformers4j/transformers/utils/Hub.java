@@ -106,7 +106,8 @@ public class Hub {
         var sagemarker_params = new JSONObject(System.getenv().getOrDefault("SM_FRAMEWORK_PARAMS", "{}"));
         var runs_distributed_training = sagemarker_params.has("sagemaker_distributed_dataparallel_enabled");
         var account_id = System.getenv().containsKey("TRAINING_JOB-ARN")
-                ? System.getenv("TRAINING_JOB_ARN").split(":")[4] : null;
+                ? System.getenv("TRAINING_JOB_ARN").split(":")[4]
+                : null;
         var sagemarker_object = new JSONObject();
         sagemarker_object.put("sm_framework", System.getenv("SM_FRAMEWORK_MODULE"));
         sagemarker_object.put("sm_region", System.getenv("AWS_REGION"));
@@ -151,40 +152,27 @@ public class Hub {
     }
 
     /**
-     * Tries to locate a file in a local folder and repo, downloads and cache it if necessary.
-     *
-     * Args: path_or_repo_id (`str` or `os.PathLike`): This can be either:
-     *
-     * - a string, the *model id* of a model repo on huggingface.co. - a path to a *directory* potentially containing
-     * the file. filename (`str`): The name of the file to locate in `path_or_repo`. cache_dir (`str` or `os.PathLike`,
-     * *optional*): Path to a directory in which a downloaded pretrained model configuration should be cached if the
-     * standard cache should not be used. force_download (`bool`, *optional*, defaults to `False`): Whether or not to
-     * force to (re-)download the configuration files and override the cached versions if they exist. resume_download
-     * (`bool`, *optional*, defaults to `False`): Whether or not to delete incompletely received file. Attempts to
-     * resume the download if such a file exists. proxies (`Dict[str, str]`, *optional*): A dictionary of proxy servers
-     * to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}.` The proxies
-     * are used on each request. token (`str` or *bool*, *optional*): The token to use as HTTP bearer authorization for
-     * remote files. If `True`, will use the token generated when running `huggingface-cli login` (stored in
-     * `~/.huggingface`). revision (`str`, *optional*, defaults to `"main"`): The specific model version to use. It can
-     * be a branch name, a tag name, or a commit id, since we use a git-based system for storing models and other
-     * artifacts on huggingface.co, so `revision` can be any identifier allowed by git. local_files_only (`bool`,
-     * *optional*, defaults to `False`): If `True`, will only try to load the tokenizer configuration from local files.
-     * subfolder (`str`, *optional*, defaults to `""`): In case the relevant files are located inside a subfolder of the
-     * model repo on huggingface.co, you can specify the folder name here. repo_type (`str`, *optional*): Specify the
-     * repo type (useful when downloading from a space for instance).
-     *
-     * <Tip>
-     *
-     * Passing `token=True` is required when you want to use a private model.
-     *
-     * </Tip>
-     *
-     * Returns: `Optional[str]`: Returns the resolved file (to the cache folder if downloaded from a repo).
-     *
-     * Examples:
-     *
-     * ```python # Download a model weight from the Hub and cache it. model_weights_file =
-     * cached_file("google-bert/bert-base-uncased", "pytorch_model.bin") ```
+     * Tries to locate a file in a local folder and repo, downloads and cache it if necessary. Args: path_or_repo_id
+     * (`str` or `os.PathLike`): This can be either: - a string, the *model id* of a model repo on huggingface.co. - a
+     * path to a *directory* potentially containing the file. filename (`str`): The name of the file to locate in
+     * `path_or_repo`. cache_dir (`str` or `os.PathLike`, *optional*): Path to a directory in which a downloaded
+     * pretrained model configuration should be cached if the standard cache should not be used. force_download (`bool`,
+     * *optional*, defaults to `False`): Whether or not to force to (re-)download the configuration files and override
+     * the cached versions if they exist. resume_download (`bool`, *optional*, defaults to `False`): Whether or not to
+     * delete incompletely received file. Attempts to resume the download if such a file exists. proxies (`Dict[str,
+     * str]`, *optional*): A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
+     * 'http://hostname': 'foo.bar:4012'}.` The proxies are used on each request. token (`str` or *bool*, *optional*):
+     * The token to use as HTTP bearer authorization for remote files. If `True`, will use the token generated when
+     * running `huggingface-cli login` (stored in `~/.huggingface`). revision (`str`, *optional*, defaults to `"main"`):
+     * The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a git-based
+     * system for storing models and other artifacts on huggingface.co, so `revision` can be any identifier allowed by
+     * git. local_files_only (`bool`, *optional*, defaults to `False`): If `True`, will only try to load the tokenizer
+     * configuration from local files. subfolder (`str`, *optional*, defaults to `""`): In case the relevant files are
+     * located inside a subfolder of the model repo on huggingface.co, you can specify the folder name here. repo_type
+     * (`str`, *optional*): Specify the repo type (useful when downloading from a space for instance). <Tip> Passing
+     * `token=True` is required when you want to use a private model. </Tip> Returns: `Optional[str]`: Returns the
+     * resolved file (to the cache folder if downloaded from a repo). Examples: ```python # Download a model weight from
+     * the Hub and cache it. model_weights_file = cached_file("google-bert/bert-base-uncased", "pytorch_model.bin") ```
      */
     public static Path cached_file(Path path_or_repo_id, String filename, Path cache_dir, boolean force_download,
             boolean resume_download, Map<String, String> proxies, Either<Boolean, String> token, String revision,
@@ -316,13 +304,11 @@ public class Hub {
 
     /**
      * Downloads a given url in a temporary file. This function is not safe to use in multiple processes. Its only use
-     * is for deprecated behavior allowing to download config/models with a single url instead of using the Hub.
-     *
-     * Args: url (`str`): The url of the file to download. proxies (`Dict[str, str]`, *optional*): A dictionary of proxy
+     * is for deprecated behavior allowing to download config/models with a single url instead of using the Hub. Args:
+     * url (`str`): The url of the file to download. proxies (`Dict[str, str]`, *optional*): A dictionary of proxy
      * servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128', 'http://hostname': 'foo.bar:4012'}.` The
-     * proxies are used on each request.
-     *
-     * Returns: `str`: The location of the temporary file where the url was downloaded.
+     * proxies are used on each request. Returns: `str`: The location of the temporary file where the url was
+     * downloaded.
      */
     public static Path download_url(String url, Map<String, String> proxies) throws IOException {
         LOGGER.warn(
